@@ -4,6 +4,7 @@ module Gallows where
 
 -}
 
+import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -39,20 +40,46 @@ newGame puzzle =
 type Action
   = NoOp
   | Guess String
+  | Reset
+  | Cheat
 
 update : Action -> Model -> Model
 update action model =
   case action of
     NoOp -> model
+
     Guess guess ->
-      let
+      let solution = checkGuess guess model.solution
+      in
+          { model |
+              guesses = guess :: model.guesses,
+              solution = solution,
+              solved = isSolved solution
+          }
+
+    Reset ->
+      newGame "choose your own adventure"
+
+    Cheat ->
+      let unguessedLetters =
+              List.filter (\( letter, guessed) -> guessed == False) model.solution
+                |> List.map fst
+          letterCounts =
+              List.foldl (\letter counts -> Dict.update letter (\v -> Just ((Maybe.withDefault 0 v) + 1)) counts) Dict.empty unguessedLetters
+          leastFrequentLetter =
+              letterCounts
+                |> Dict.toList
+                |> List.sortBy snd
+                |> List.head
+                |> Maybe.withDefault ( "", 0 )
+                |> fst
+          guess = leastFrequentLetter
           solution = checkGuess guess model.solution
       in
-      { model |
-          guesses = guess :: model.guesses,
-          solution = solution,
-          solved = isSolved solution
-      }
+          { model |
+              solution = solution,
+              solved = isSolved solution
+          }
 
 checkGuess : String -> Solution -> Solution
 checkGuess guess solution =
@@ -75,6 +102,9 @@ view address model =
     [ h1 [] [ text "The Blood Runs Cold On Gallows Hill" ]
     , div
       []
+      [ (controls address) ]
+    , div
+      []
       [ h2 [] [ text "Puzzle" ]
       , div
         []
@@ -94,6 +124,16 @@ view address model =
         []
         (List.map (\guess -> li [] [ text guess ]) model.guesses)
       ]
+    ]
+
+controls : Address Action -> Html
+controls address =
+  ul []
+    [ li
+        []
+        [ button [ onClick address Reset ] [ text "Reset" ]
+        , button [ onClick address Cheat ] [ text "Cheat" ]
+        ]
     ]
 
 renderSolution : Model -> List Html
