@@ -4,61 +4,111 @@ module Gallows where
 
 -}
 
+import Array
 import Dict
+import Effects exposing (Effects, Never)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Http
+import Json.Decode as Json exposing ((:=))
 import Signal exposing (Address)
-import StartApp.Simple as StartApp
+import StartApp
 import String
+import Task exposing (andThen)
 
 ---- MODEL ----
 
 type alias Model =
-  { puzzle : String
+  { ready : Bool
   , guesses : List String
   , solution : Solution
   , solved : Bool
+  , phrases : List String
+  , id : Int
   }
 
 type alias Solution =
   List ( String, Bool )
 
-model =
-  newGame "the blood runs cold on gallows hill"
+type alias Game =
+  { guesses : List String
+  , solution : Solution
+  , solved : Bool
+  }
 
-newGame : String -> Model
+init : ( Model, Effects Action )
+init =
+  ( model, fetchPhrases )
+
+model =
+  let game = newGame "the blood runs cold on gallows hill"
+  in
+      { ready = False
+      , phrases = []
+      , guesses = game.guesses
+      , solution = game.solution
+      , solved = game.solved
+      , id = -1
+      }
+
+newGame : String -> Game
 newGame puzzle =
-  { puzzle = puzzle
-  , guesses = []
+  { guesses = []
   , solution = List.map (\c -> (String.fromChar c, False)) (String.toList puzzle)
   , solved = False
   }
 
+fetchPhrases : Effects Action
+fetchPhrases =
+  Http.get phrases "/data/proverbs.json"
+    |> Task.toMaybe
+    |> Task.map SetPhrases
+    |> Effects.task
+
+phrases : Json.Decoder (List String)
+phrases =
+  "phrases" := (Json.list Json.string)
+
 ---- UPDATE ----
 
 type Action
-  = NoOp
-  | Guess String
+  = Guess String
   | Reset
   | Cheat
+  | SetPhrases (Maybe (List String))
 
-update : Action -> Model -> Model
+update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
-    NoOp -> model
-
     Guess guess ->
       let solution = checkGuess guess model.solution
-      in
-          { model |
-              guesses = guess :: model.guesses,
-              solution = solution,
-              solved = isSolved solution
-          }
+          model' =
+            { model |
+                guesses = guess :: model.guesses,
+                solution = solution,
+                solved = isSolved solution
+            }
+      in ( model', Effects.none )
 
     Reset ->
-      newGame "choose your own adventure"
+      if not model.ready then
+         ( model, Effects.none )
+
+      else
+        let id = model.id + 1
+            puzzle =
+              Array.fromList model.phrases
+              |> Array.get id
+            game = newGame (Maybe.withDefault "" puzzle)
+            model' =
+              { model |
+                  guesses = game.guesses,
+                  solution = game.solution,
+                  solved = game.solved,
+                  id = id
+              }
+        in ( model', Effects.none )
 
     Cheat ->
       let unguessedLetters =
@@ -75,11 +125,25 @@ update action model =
                 |> fst
           guess = leastFrequentLetter
           solution = checkGuess guess model.solution
-      in
-          { model |
-              solution = solution,
-              solved = isSolved solution
-          }
+          model' =
+            { model |
+                solution = solution,
+                solved = isSolved solution
+            }
+      in ( model', Effects.none )
+
+    SetPhrases phrases ->
+      let ( id, ready ) =
+            case phrases of
+              Nothing -> ( -1, False )
+              _ -> ( 0, True )
+          model' =
+            { model |
+                ready = ready,
+                phrases = Maybe.withDefault [] phrases,
+                id = id
+            }
+      in ( model', Effects.none )
 
 checkGuess : String -> Solution -> Solution
 checkGuess guess solution =
@@ -138,8 +202,12 @@ controls address =
 
 renderSolution : Model -> List Html
 renderSolution model =
-  (List.map renderALetter model.solution)
-  ++ [ (renderSolved model.solved) ]
+  if model.ready then
+      (List.map renderALetter model.solution)
+      ++ [ (renderSolved model.solved) ]
+
+  else
+      []
 
 renderALetter : ( String, Bool ) -> Html
 renderALetter solution =
@@ -173,5 +241,18 @@ puzzleStyle =
 
 ---- INPUTS ----
 
+app =
+  StartApp.start
+    { init = init
+    , view = view
+    , update = update
+    , inputs = []
+    }
+
+main : Signal Html
 main =
-  StartApp.start { model = model, view = view, update = update }
+  app.html
+
+port tasks : Signal (Task.Task Never ())
+port tasks =
+  app.tasks
