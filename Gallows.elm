@@ -21,19 +21,27 @@ import Task exposing (andThen)
 
 type alias Model =
   { ready : Bool
-  , guesses : List String
-  , solution : Solution
-  , solved : Bool
+  , game : Game
   , phrases : List String
   , id : Int
   }
 
-type alias Solution =
-  List ( String, Bool )
+type alias Guess =
+  { letter : String
+  , correct : Bool
+  }
+
+type alias PuzzlePlace =
+  { letter : String
+  , show : Bool
+  }
+
+type alias Puzzle =
+  List PuzzlePlace
 
 type alias Game =
-  { guesses : List String
-  , solution : Solution
+  { guesses : List Guess
+  , puzzle : Puzzle
   , solved : Bool
   }
 
@@ -45,17 +53,21 @@ model =
   let game = newGame "the blood runs cold on gallows hill"
   in
       { ready = False
+      , game = game
       , phrases = []
-      , guesses = game.guesses
-      , solution = game.solution
-      , solved = game.solved
       , id = -1
       }
 
+newPuzzlePlace : Char -> PuzzlePlace
+newPuzzlePlace char =
+  { letter = String.fromChar char
+  , show = False
+  }
+
 newGame : String -> Game
-newGame puzzle =
+newGame phrase =
   { guesses = []
-  , solution = List.map (\c -> (String.fromChar c, False)) (String.toList puzzle)
+  , puzzle = List.map newPuzzlePlace (String.toList phrase)
   , solved = False
   }
 
@@ -73,89 +85,145 @@ phrases =
 ---- UPDATE ----
 
 type Action
-  = Guess String
-  | Reset
-  | Cheat
+  = TakeAGuess String
+  | NewGame
+  | RevealALetter
   | SetPhrases (Maybe (List String))
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
-    Guess guess ->
-      let solution = checkGuess guess model.solution
-          model' =
-            { model |
-                guesses = guess :: model.guesses,
-                solution = solution,
-                solved = isSolved solution
-            }
-      in ( model', Effects.none )
+    TakeAGuess guess ->
+      let game = model.game
 
-    Reset ->
+          checkedGuess = checkGuess guess game.puzzle
+
+          updatedPuzzle =
+            if checkedGuess.correct then
+               updatePuzzle guess game.puzzle
+
+            else
+               game.puzzle
+
+          updatedGame =
+            { game
+                | guesses = checkedGuess :: game.guesses
+                , puzzle = updatedPuzzle
+                , solved = isSolved updatedPuzzle
+            }
+
+          updatedModel =
+            { model
+                | game = updatedGame
+            }
+
+      in ( updatedModel, Effects.none )
+
+    NewGame ->
       if not model.ready then
          ( model, Effects.none )
 
       else
         let id = model.id + 1
-            puzzle =
+            phrase =
               Array.fromList model.phrases
               |> Array.get id
-            game = newGame (Maybe.withDefault "" puzzle)
-            model' =
-              { model |
-                  guesses = game.guesses,
-                  solution = game.solution,
-                  solved = game.solved,
-                  id = id
-              }
-        in ( model', Effects.none )
 
-    Cheat ->
-      let unguessedLetters =
-              List.filter (\( letter, guessed) -> guessed == False) model.solution
-                |> List.map fst
-          letterCounts =
-              List.foldl (\letter counts -> Dict.update letter (\v -> Just ((Maybe.withDefault 0 v) + 1)) counts) Dict.empty unguessedLetters
-          leastFrequentLetter =
-              letterCounts
-                |> Dict.toList
-                |> List.sortBy snd
-                |> List.head
-                |> Maybe.withDefault ( "", 0 )
-                |> fst
-          guess = leastFrequentLetter
-          solution = checkGuess guess model.solution
-          model' =
-            { model |
-                solution = solution,
-                solved = isSolved solution
+            game = newGame (Maybe.withDefault "" phrase)
+
+            updatedModel =
+              { model
+                  | game = game
+                  , id = id
+              }
+
+        in ( updatedModel, Effects.none )
+
+    RevealALetter ->
+      let game = model.game
+
+          unguessedLetters = findIncorrectLetters game.puzzle
+
+          guess = findLeastFrequentLetter unguessedLetters
+
+          updatedPuzzle = updatePuzzle guess game.puzzle
+
+          updatedGame =
+            { game
+                | puzzle = updatedPuzzle
+                , solved = isSolved updatedPuzzle
             }
-      in ( model', Effects.none )
+
+          updatedModel =
+            { model
+                | game = updatedGame
+            }
+
+      in ( updatedModel, Effects.none )
 
     SetPhrases phrases ->
       let ( id, ready ) =
             case phrases of
               Nothing -> ( -1, False )
               _ -> ( 0, True )
-          model' =
-            { model |
-                ready = ready,
-                phrases = Maybe.withDefault [] phrases,
-                id = id
+
+          updatedModel =
+            { model
+                | ready = ready
+                , phrases = Maybe.withDefault [] phrases
+                , id = id
             }
-      in ( model', Effects.none )
 
-checkGuess : String -> Solution -> Solution
-checkGuess guess solution =
+      in ( updatedModel, Effects.none )
+
+checkGuess : String -> Puzzle -> Guess
+checkGuess guess puzzle =
+  { letter = guess
+  , correct = List.any (\{ letter } -> letter == guess) puzzle
+  }
+
+updatePuzzle : String -> Puzzle -> Puzzle
+updatePuzzle guess puzzle =
   List.map
-    (\( letter, guessed ) -> ( letter, guessed || guess == letter ))
-    solution
+    (\{ letter, show } ->
+        { letter = letter
+        , show = show || guess == letter
+        }
+    )
+    puzzle
 
-isSolved : Solution -> Bool
-isSolved solution =
+isSolved : Puzzle -> Bool
+isSolved puzzle =
   List.all
-    (\( letter, guessed ) -> guessed || letter == " ")
-    solution
+    (\{ letter, show } -> show || letter == " ")
+    puzzle
+
+findIncorrectLetters : Puzzle -> List String
+findIncorrectLetters puzzle =
+  List.filter (\{ show } -> show == False) puzzle
+    |> List.map .letter
+
+findLeastFrequentLetter : List String -> String
+findLeastFrequentLetter letters =
+  let letterCounts =
+        List.foldl
+          (\letter counts ->
+              Dict.update
+                letter
+                (\count -> Just ((Maybe.withDefault 0 count) + 1))
+                counts
+          )
+          Dict.empty letters
+
+      leastFrequentLetter =
+        letterCounts
+          |> Dict.toList
+          |> List.sortBy snd
+          |> List.head
+          |> Maybe.withDefault ( "", 0 )
+          |> fst
+
+  in leastFrequentLetter
 
 ---- VIEW ----
 
@@ -179,14 +247,14 @@ view address model =
       [ h2 [] [ text "Guesses" ]
       , input
         [ placeholder "guess"
-        , on "input" targetValue (\guess -> Signal.message address (Guess guess))
+        , on "input" targetValue (\guess -> Signal.message address (TakeAGuess guess))
         , value "" -- Clear out the value, so only one letter at a time is used
         , maxlength 1
         ]
         []
       , ol
         []
-        (List.map (\guess -> li [] [ text guess ]) model.guesses)
+        (List.map (\{ letter } -> li [] [ text letter ]) model.game.guesses)
       ]
     ]
 
@@ -195,27 +263,27 @@ controls address =
   ul []
     [ li
         []
-        [ button [ onClick address Reset ] [ text "Reset" ]
-        , button [ onClick address Cheat ] [ text "Cheat" ]
+        [ button [ onClick address NewGame ] [ text "New Game" ]
+        , button [ onClick address RevealALetter ] [ text "Reveal A Letter" ]
         ]
     ]
 
 renderSolution : Model -> List Html
 renderSolution model =
   if model.ready then
-      (List.map renderALetter model.solution)
-      ++ [ (renderSolved model.solved) ]
+      (List.map renderALetter model.game.puzzle)
+      ++ [ (renderSolved model.game.solved) ]
 
   else
       []
 
-renderALetter : ( String, Bool ) -> Html
-renderALetter solution =
-  span [ puzzleStyle ] [ text (renderLetter solution) ]
+renderALetter : PuzzlePlace -> Html
+renderALetter place =
+  span [ puzzleStyle ] [ text (renderLetter place) ]
 
-renderLetter : ( String, Bool ) -> String
-renderLetter ( letter, guessed ) =
-  if guessed then
+renderLetter : PuzzlePlace -> String
+renderLetter { letter, show } =
+  if show then
       letter
 
   else if letter == " " then
