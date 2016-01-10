@@ -4,7 +4,6 @@ module Gallows where
 
 -}
 
-import Array
 import Dict
 import Effects exposing (Effects, Never)
 import Html exposing (..)
@@ -12,6 +11,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
 import Json.Decode as Json exposing ((:=))
+import Random exposing (Seed)
 import Signal exposing (Address)
 import StartApp
 import String
@@ -23,7 +23,7 @@ type alias Model =
   { ready : Bool
   , game : Game
   , phrases : List String
-  , id : Int
+  , seed : Seed
   }
 
 type alias Guess =
@@ -54,7 +54,7 @@ model =
       { ready = False
       , game = game
       , phrases = []
-      , id = -1
+      , seed = Random.initialSeed 42
       }
 
 newPuzzlePlace : Char -> PuzzlePlace
@@ -79,6 +79,19 @@ fetchPhrases =
 phrases : Json.Decoder (List String)
 phrases =
   "phrases" := (Json.list Json.string)
+
+nextPhrase : Seed -> List String -> ( Seed, Maybe String )
+nextPhrase seed phrases =
+  let generator = Random.int 0 (List.length phrases - 1)
+
+      ( index, newSeed ) = Random.generate generator seed
+
+      phrase =
+        List.drop index phrases
+        |> List.head
+
+  in ( newSeed, phrase )
+
 
 ---- UPDATE ----
 
@@ -121,17 +134,14 @@ update action model =
          ( model, Effects.none )
 
       else
-        let id = model.id + 1
-            phrase =
-              Array.fromList model.phrases
-              |> Array.get id
+        let ( seed, phrase ) = nextPhrase model.seed model.phrases
 
             game = newGame (Maybe.withDefault "" phrase)
 
             updatedModel =
               { model
                   | game = game
-                  , id = id
+                  , seed = seed
               }
 
         in ( updatedModel, Effects.none )
@@ -157,20 +167,24 @@ update action model =
 
       in ( updatedModel, Effects.none )
 
-    SetPhrases phrases ->
-      let ( id, ready ) =
-            case phrases of
-              Nothing -> ( -1, False )
-              _ -> ( 0, True )
+    SetPhrases maybePhrases ->
+      case maybePhrases of
+        Nothing -> ( model, Effects.none )
 
-          updatedModel =
-            { model
-                | ready = ready
-                , phrases = Maybe.withDefault [] phrases
-                , id = id
-            }
+        Just phrases ->
+          let ( seed, phrase ) = nextPhrase model.seed phrases
 
-      in ( updatedModel, Effects.none )
+              game = newGame (Maybe.withDefault "" phrase)
+
+              updatedModel =
+                { model
+                    | ready = True
+                    , phrases = phrases
+                    , seed = seed
+                    , game = game
+                }
+
+          in ( updatedModel, Effects.none )
 
 checkGuess : String -> Puzzle -> Guess
 checkGuess guess puzzle =
@@ -230,7 +244,7 @@ view address model =
     [ h1 [] [ text "The Blood Runs Cold On Gallows Hill" ]
     , div
       []
-      [ (controls address) ]
+      [ (controls address model) ]
     , div
       []
       [ h2 [] [ text "Puzzle" ]
@@ -254,15 +268,25 @@ view address model =
       ]
     ]
 
-controls : Address Action -> Html
-controls address =
-  ul []
-    [ li
-        []
-        [ button [ onClick address NewGame ] [ text "New Game" ]
-        , button [ onClick address RevealALetter ] [ text "Reveal A Letter" ]
+controls : Address Action -> Model -> Html
+controls address model =
+  let buttonsDisabled = not model.ready
+  in
+      ul []
+        [ li
+            []
+            [ button
+              [ onClick address NewGame
+              , disabled buttonsDisabled
+              ]
+              [ text "New Game" ]
+            , button
+              [ onClick address RevealALetter
+              , disabled buttonsDisabled
+              ]
+              [ text "Reveal A Letter" ]
+            ]
         ]
-    ]
 
 puzzle : Model -> List Html
 puzzle model =
