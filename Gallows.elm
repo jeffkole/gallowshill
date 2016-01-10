@@ -15,7 +15,7 @@ import Json.Decode as Json exposing ((:=))
 import Signal exposing (Address)
 import StartApp
 import String
-import Task exposing (andThen)
+import Task exposing (Task)
 
 ---- MODEL ----
 
@@ -42,7 +42,6 @@ type alias Puzzle =
 type alias Game =
   { guesses : List Guess
   , puzzle : Puzzle
-  , solved : Bool
   }
 
 init : ( Model, Effects Action )
@@ -68,7 +67,6 @@ newGame : String -> Game
 newGame phrase =
   { guesses = []
   , puzzle = List.map newPuzzlePlace (String.toList phrase)
-  , solved = False
   }
 
 fetchPhrases : Effects Action
@@ -109,7 +107,6 @@ update action model =
             { game
                 | guesses = checkedGuess :: game.guesses
                 , puzzle = updatedPuzzle
-                , solved = isSolved updatedPuzzle
             }
 
           updatedModel =
@@ -151,7 +148,6 @@ update action model =
           updatedGame =
             { game
                 | puzzle = updatedPuzzle
-                , solved = isSolved updatedPuzzle
             }
 
           updatedModel =
@@ -240,7 +236,7 @@ view address model =
       [ h2 [] [ text "Puzzle" ]
       , div
         []
-        (renderSolution model)
+        (puzzle model)
       ]
     , div
       []
@@ -268,37 +264,41 @@ controls address =
         ]
     ]
 
-renderSolution : Model -> List Html
-renderSolution model =
+puzzle : Model -> List Html
+puzzle model =
   if model.ready then
-      (List.map renderALetter model.game.puzzle)
-      ++ [ (renderSolved model.game.solved) ]
+      (List.map aLetter model.game.puzzle)
+      ++ [ (solvedIndicator model.game.puzzle) ]
 
   else
       []
 
-renderALetter : PuzzlePlace -> Html
-renderALetter place =
-  span [ puzzleStyle ] [ text (renderLetter place) ]
+aLetter : PuzzlePlace -> Html
+aLetter { letter, show } =
+  let letterText =
+        if show then
+            letter
 
-renderLetter : PuzzlePlace -> String
-renderLetter { letter, show } =
-  if show then
-      letter
+        else if letter == " " then
+            " "
 
-  else if letter == " " then
-      " "
+        else
+            "_"
+  in span [ puzzleStyle ] [ text letterText ]
 
-  else
-      "_"
+solvedIndicator : Puzzle -> Html
+solvedIndicator puzzle =
+  let solved =
+        isSolved puzzle
 
-renderSolved : Bool -> Html
-renderSolved isSolved =
-  if isSolved then
-     span [] [ text "!" ]
+      indicator =
+        if solved then
+            span [] [ text "!" ]
 
-  else
-     span [] []
+        else
+            span [] []
+
+  in indicator
 
 puzzleStyle : Attribute
 puzzleStyle =
@@ -321,6 +321,6 @@ main : Signal Html
 main =
   app.html
 
-port tasks : Signal (Task.Task Never ())
+port tasks : Signal (Task Never ())
 port tasks =
   app.tasks
