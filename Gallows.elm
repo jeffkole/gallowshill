@@ -4,6 +4,7 @@ module Gallows where
 
 -}
 
+import CurrentTime
 import Dict
 import Effects exposing (Effects, Never)
 import Html exposing (..)
@@ -54,7 +55,7 @@ model =
       { ready = False
       , game = game
       , phrases = []
-      , seed = Random.initialSeed 42
+      , seed = Random.initialSeed CurrentTime.now
       }
 
 newPuzzlePlace : Char -> PuzzlePlace
