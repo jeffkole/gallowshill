@@ -50,7 +50,7 @@ init =
   ( model, fetchPhrases )
 
 model =
-  let game = newGame "the blood runs cold on gallows hill"
+  let game = newGame ""
   in
       { ready = False
       , game = game
