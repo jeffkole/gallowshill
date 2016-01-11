@@ -1,0 +1,12 @@
+{
+  "name": "gallowshill",
+  "version": "1.0.0",
+  "description": "A game of hangman",
+  "scripts": {
+    "start": "superstatic"
+  },
+  "devDependencies": {
+    "elm": "^0.16.0",
+    "superstatic": "^4.0.1"
+  }
+}
