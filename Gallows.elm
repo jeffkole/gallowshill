@@ -189,16 +189,23 @@ update action model =
 
 checkGuess : String -> Puzzle -> Guess
 checkGuess guess puzzle =
-  { letter = guess
-  , correct = List.any (\{ letter } -> letter == guess) puzzle
-  }
+  let correct =
+        List.any
+            -- The same toUpper comparison is done in updatePuzzle. DRY?
+            (\{ letter } -> (String.toUpper letter) == (String.toUpper guess))
+            puzzle
+
+  in { letter = guess
+     , correct = correct
+     }
 
 updatePuzzle : String -> Puzzle -> Puzzle
 updatePuzzle guess puzzle =
   List.map
     (\{ letter, show } ->
         { letter = letter
-        , show = show || guess == letter
+        -- The same toUpper comparison is done in checkGuess. DRY?
+        , show = show || (String.toUpper guess) == (String.toUpper letter)
         }
     )
     puzzle
@@ -206,7 +213,7 @@ updatePuzzle guess puzzle =
 isSolved : Puzzle -> Bool
 isSolved puzzle =
   List.all
-    (\{ letter, show } -> show || letter == " ")
+    (\{ letter, show } -> show || isPunctuation letter)
     puzzle
 
 findIncorrectLetters : Puzzle -> List String
@@ -300,16 +307,41 @@ puzzle model =
 
 aLetter : PuzzlePlace -> Html
 aLetter { letter, show } =
-  let letterText =
-        if show then
-            letter
+  if show then
+      div [ letterStyle ] [ text letter ]
 
-        else if letter == " " then
-            " "
+  else if isPunctuation letter then
+      div [ punctuationStyle ] [ text letter ]
 
-        else
-            "_"
-  in span [ puzzleStyle ] [ text letterText ]
+  else
+      div [ letterStyle ] [ text "_" ]
+
+letterStyle : Attribute
+letterStyle =
+  style
+    [ ( "display", "inline-block" )
+    , ( "width", "1em" )
+    , ( "font-size", "2em" )
+    , ( "margin-right", "0.2em" )
+    , ( "border", "1px solid #ccc" )
+    , ( "text-align", "center" )
+    ]
+
+punctuationStyle : Attribute
+punctuationStyle =
+  style
+    [ ( "display", "inline-block" )
+    , ( "width", "1em" )
+    , ( "font-size", "2em" )
+    ]
+
+isPunctuation : String -> Bool
+isPunctuation letter =
+  let first = String.left 1 letter
+
+      punctuation = " `~!@#$%^&*()-_=+[]{}|;':\",.<>/?"
+
+  in String.contains first punctuation
 
 solvedIndicator : Puzzle -> Html
 solvedIndicator puzzle =
@@ -324,13 +356,6 @@ solvedIndicator puzzle =
             span [] []
 
   in indicator
-
-puzzleStyle : Attribute
-puzzleStyle =
-  style
-    [ ( "font-size", "2em" )
-    , ( "margin-right", "0.2em" )
-    ]
 
 ---- INPUTS ----
 
