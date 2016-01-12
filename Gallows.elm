@@ -47,16 +47,13 @@ type alias Game =
 
 init : ( Model, Effects Action )
 init =
-  ( model, fetchPhrases )
-
-model =
-  let game = newGame ""
-  in
+  let model =
       { ready = False
-      , game = game
+      , game = newGame ""
       , phrases = []
       , seed = Random.initialSeed CurrentTime.now
       }
+  in ( model, fetchPhrases )
 
 newPuzzlePlace : Char -> PuzzlePlace
 newPuzzlePlace char =
