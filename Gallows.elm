@@ -261,16 +261,6 @@ view address model =
       []
       [ h2 [] [ text "Guesses" ]
       , keyboard address model
-      , input
-        [ placeholder "guess"
-        , on "input" targetValue (\guess -> Signal.message address (TakeAGuess guess))
-        , value "" -- Clear out the value, so only one letter at a time is used
-        , maxlength 1
-        ]
-        []
-      , ol
-        []
-        (List.map (\{ letter } -> li [] [ text letter ]) model.game.guesses)
       ]
     ]
 
