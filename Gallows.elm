@@ -260,6 +260,7 @@ view address model =
     , div
       []
       [ h2 [] [ text "Guesses" ]
+      , keyboard address model
       , input
         [ placeholder "guess"
         , on "input" targetValue (\guess -> Signal.message address (TakeAGuess guess))
@@ -272,6 +273,61 @@ view address model =
         (List.map (\{ letter } -> li [] [ text letter ]) model.game.guesses)
       ]
     ]
+
+keyboard : Address Action -> Model -> Html
+keyboard address model =
+  let keys =
+        [ "qwertyuiop"
+        , "asdfghjkl"
+        , "zxcvbnm"
+        ]
+  in
+      div
+      []
+      (List.map (keyboardRow address model) keys)
+
+keyboardRow : Address Action -> Model -> String -> Html
+keyboardRow address model keys =
+  let row =
+        List.map (keyboardKey address model) (String.toList keys)
+  in
+      div
+      [ style [ ( "text-align", "center" ) ] ]
+      row
+
+keyboardKey : Address Action -> Model -> Char -> Html
+keyboardKey address model key =
+  let keyString = String.fromChar key
+
+      guess =
+        List.filter (\{ letter } -> keyString == letter) model.game.guesses
+        |> List.head
+
+      keyStyle =
+        case guess of
+          Nothing -> style keyboardStyle
+          Just { correct } ->
+            if correct then
+              style <|
+                keyboardStyle
+                ++ [ ( "background-color", "darkcyan" )
+                   , ( "font-weight", "bold" )
+                   , ( "color", "white" )
+                   ]
+            else
+              style <|
+                keyboardStyle
+                ++ [ ( "background-color", "lightcoral" )
+                   , ( "font-weight", "bold" )
+                   , ( "color", "white" )
+                   ]
+
+  in
+      div
+      [ keyStyle
+      , onClick address (TakeAGuess keyString)
+      ]
+      [ text keyString ]
 
 controls : Address Action -> Model -> Html
 controls address model =
@@ -339,6 +395,18 @@ isPunctuation letter =
       punctuation = " `~!@#$%^&*()-_=+[]{}|;':\",.<>/?"
 
   in String.contains first punctuation
+
+keyboardStyle : List (String, String)
+keyboardStyle =
+    [ ( "display", "inline-block" )
+    , ( "width", "1em" )
+    , ( "font-size", "2em" )
+    , ( "margin", "0.1em" )
+    , ( "padding", "0.2em" )
+    , ( "border", "1px solid #ccc" )
+    , ( "text-align", "center" )
+    , ( "cursor", "pointer" )
+    ]
 
 solvedIndicator : Puzzle -> Html
 solvedIndicator puzzle =
