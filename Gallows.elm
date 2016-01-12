@@ -245,7 +245,9 @@ findLeastFrequentLetter letters =
 view : Address Action -> Model -> Html
 view address model =
   div
-    []
+    [ style
+      [ ( "text-align", "center" ) ]
+    ]
     [ h1 [] [ text "The Blood Runs Cold On Gallows Hill" ]
     , div
       []
@@ -323,7 +325,12 @@ controls : Address Action -> Model -> Html
 controls address model =
   let buttonsDisabled = not model.ready
   in
-      ul []
+      ul
+        [ style
+          [ ( "list-style-type", "none" )
+          , ( "padding", "0" )
+          ]
+        ]
         [ li
             []
             [ button
