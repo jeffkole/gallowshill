@@ -250,20 +250,20 @@ view address model =
     ]
     [ h1 [] [ text "The Blood Runs Cold On Gallows Hill" ]
     , div
-      []
-      [ (controls address model) ]
-    , div
-      []
-      [ h2 [] [ text "Puzzle" ]
-      , div
         []
-        (puzzle model)
-      ]
+        [ (controls address model) ]
     , div
-      []
-      [ h2 [] [ text "Guesses" ]
-      , keyboard address model
-      ]
+        []
+        [ h2 [] [ text "Puzzle" ]
+        , div
+            []
+            (puzzle model)
+        ]
+    , div
+        []
+        [ h2 [] [ text "Guesses" ]
+        , keyboard address model
+        ]
     ]
 
 keyboard : Address Action -> Model -> Html
@@ -273,19 +273,15 @@ keyboard address model =
         , "asdfghjkl"
         , "zxcvbnm"
         ]
-  in
-      div
-      []
-      (List.map (keyboardRow address model) keys)
+
+  in div [] (List.map (keyboardRow address model) keys)
 
 keyboardRow : Address Action -> Model -> String -> Html
 keyboardRow address model keys =
   let row =
         List.map (keyboardKey address model) (String.toList keys)
-  in
-      div
-      [ style [ ( "text-align", "center" ) ] ]
-      row
+
+  in div [ style [ ( "text-align", "center" ) ] ] row
 
 keyboardKey : Address Action -> Model -> Char -> Html
 keyboardKey address model key =
@@ -297,18 +293,18 @@ keyboardKey address model key =
 
       keyStyle =
         case guess of
-          Nothing -> style keyboardStyle
+          Nothing -> style keyboardStyles
           Just { correct } ->
             if correct then
               style <|
-                keyboardStyle
+                keyboardStyles
                 ++ [ ( "background-color", "darkcyan" )
                    , ( "font-weight", "bold" )
                    , ( "color", "white" )
                    ]
             else
               style <|
-                keyboardStyle
+                keyboardStyles
                 ++ [ ( "background-color", "lightcoral" )
                    , ( "font-weight", "bold" )
                    , ( "color", "white" )
@@ -316,10 +312,10 @@ keyboardKey address model key =
 
   in
       div
-      [ keyStyle
-      , onClick address (TakeAGuess keyString)
-      ]
-      [ text keyString ]
+        [ keyStyle
+        , onClick address (TakeAGuess keyString)
+        ]
+        [ text keyString ]
 
 controls : Address Action -> Model -> Html
 controls address model =
@@ -393,8 +389,8 @@ isPunctuation letter =
 
   in String.contains first punctuation
 
-keyboardStyle : List (String, String)
-keyboardStyle =
+keyboardStyles : List (String, String)
+keyboardStyles =
     [ ( "display", "inline-block" )
     , ( "width", "1em" )
     , ( "font-size", "2em" )
