@@ -215,8 +215,13 @@ isSolved puzzle =
 
 findIncorrectLetters : Puzzle -> List String
 findIncorrectLetters puzzle =
-  List.filter (\{ show } -> show == False) puzzle
-    |> List.map .letter
+  let notShown = \{ show } -> show == False
+      isProperLetter = \{ letter } -> not (isPunctuation letter)
+      incorrect = \x -> notShown x && isProperLetter x
+
+  in
+      List.filter incorrect puzzle
+        |> List.map .letter
 
 findLeastFrequentLetter : List String -> String
 findLeastFrequentLetter letters =
@@ -224,7 +229,7 @@ findLeastFrequentLetter letters =
         List.foldl
           (\letter counts ->
               Dict.update
-                letter
+                (String.toUpper letter)
                 (\count -> Just ((Maybe.withDefault 0 count) + 1))
                 counts
           )
@@ -319,7 +324,8 @@ keyboardKey address model key =
 
 controls : Address Action -> Model -> Html
 controls address model =
-  let buttonsDisabled = not model.ready
+  let gameNotReady = not model.ready
+      puzzleSolved = isSolved model.game.puzzle
   in
       ul
         [ style
@@ -331,12 +337,12 @@ controls address model =
             []
             [ button
               [ onClick address NewGame
-              , disabled buttonsDisabled
+              , disabled gameNotReady
               ]
               [ text "New Game" ]
             , button
               [ onClick address RevealALetter
-              , disabled buttonsDisabled
+              , disabled (gameNotReady || puzzleSolved)
               ]
               [ text "Reveal A Letter" ]
             ]
