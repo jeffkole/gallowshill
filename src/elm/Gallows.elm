@@ -423,6 +423,7 @@ solvedIndicator puzzle =
 
 ---- INPUTS ----
 
+app : StartApp.App Model
 app =
   StartApp.start
     { init = init

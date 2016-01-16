@@ -3,10 +3,18 @@
   "version": "1.0.0",
   "description": "A game of hangman",
   "scripts": {
-    "start": "superstatic"
+    "start": "./bin/build && superstatic",
+    "deploy": "./bin/build && surge --project _site",
+    "dev": "superstatic & watch './bin/build' src"
   },
   "devDependencies": {
     "elm": "^0.16.0",
-    "superstatic": "^4.0.1"
+    "superstatic": "^4.0.1",
+    "surge": "^0.17.4",
+    "watch": "^0.17.1"
+  },
+  "dependencies": {
+    "html5shiv": "^3.7.3",
+    "normalize.css": "^3.0.3"
   }
 }
