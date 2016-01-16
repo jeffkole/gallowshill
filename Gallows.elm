@@ -215,9 +215,9 @@ isSolved puzzle =
 
 findIncorrectLetters : Puzzle -> List String
 findIncorrectLetters puzzle =
-  let notShown = \{ show } -> show == False
-      isProperLetter = \{ letter } -> not (isPunctuation letter)
-      incorrect = \x -> notShown x && isProperLetter x
+  let notShown { show } = show == False
+      isProperLetter { letter } = not (isPunctuation letter)
+      incorrect x = notShown x && isProperLetter x
 
   in
       List.filter incorrect puzzle
