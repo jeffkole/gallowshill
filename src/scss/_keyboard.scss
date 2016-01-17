@@ -1,0 +1,26 @@
+// The styles for the keybaord, which is what the user clicks on to make a guess
+
+.keyboard {
+  text-align: center;
+}
+
+.keyboard-key {
+  display: inline-block;
+  width: 3rem;
+  font-size: 2rem;
+  margin: 0.1rem;
+  padding: 0.2rem;
+  border: 1px solid #ccc;
+  text-align: center;
+  cursor: pointer;
+}
+
+.keyboard-key-correct {
+  background-color: darkcyan;
+  color: white;
+}
+
+.keyboard-key-incorrect {
+  background-color: lightcoral;
+  color: white;
+}

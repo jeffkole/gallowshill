@@ -56,7 +56,11 @@
 // @import "carousel";
 
 // Utility classes
-// @import "utilities";
+@import "utilities";
 // @import "utilities-background";
 // @import "utilities-spacing";
 // @import "utilities-responsive";
+
+// Our own components
+@import "puzzle";
+@import "keyboard";
