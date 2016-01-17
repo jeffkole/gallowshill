@@ -12,6 +12,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
 import Json.Decode as Json exposing ((:=))
+import PuzzleWords
 import Random exposing (Seed)
 import Signal exposing (Address)
 import StartApp
@@ -350,12 +351,24 @@ controls address model =
 
 puzzle : Model -> List Html
 puzzle model =
-  if model.ready then
-      (List.map aLetter model.game.puzzle)
-      ++ [ (solvedIndicator model.game.puzzle) ]
+  if not model.ready then
+      []
 
   else
-      []
+      let words = PuzzleWords.toWords model.game.puzzle
+      in
+        (List.map aWord words)
+        ++ [ (solvedIndicator model.game.puzzle) ]
+
+aWord : List PuzzlePlace -> Html
+aWord places =
+  let letters = List.map aLetter places
+  in div
+       [ style
+         [ ( "display", "inline-block" )
+         , ( "margin", "0.2em 0.75em" )
+         ] ]
+       letters
 
 aLetter : PuzzlePlace -> Html
 aLetter { letter, show } =
