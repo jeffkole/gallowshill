@@ -7,14 +7,14 @@
 
 @include media-breakpoint-up(sm) {
   .keyboard {
-    font-size: 2rem;
+    font-size: 1rem;
   }
 }
 
 .keyboard-key {
   display: inline-block;
   width: 1.4em;
-  font-size: 75%;
+  font-size: 1em;
   margin: 0.1em;
   padding: 0.2em;
   border: 1px solid #ccc;
@@ -22,10 +22,17 @@
   cursor: pointer;
 }
 
+@include media-breakpoint-up(sm) {
+  .keyboard-key {
+    font-size: 2em;
+  }
+}
+
 @include media-breakpoint-up(md) {
   .keyboard-key {
-    width: 3rem;
-    font-size: 100%;
+    width: 3em;
+    font-size: 1em;
+    padding: 1em 0;
   }
 }
 

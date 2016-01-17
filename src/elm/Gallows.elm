@@ -263,15 +263,17 @@ view address model =
             [ controls address model
             ]
         ]
-    , div [ class "row" ]
+    , div [ class "row m-b-1" ]
         [ div [ class "col-xs-12" ]
-            [ h2 [] [ text "Puzzle" ]
+            [ h2 [ class "hidden-sm-down" ] [ text "Puzzle" ]
+            , h4 [] [ text "Solve the puzzle below" ]
             , puzzle model
             ]
         ]
     , div [ class "row" ]
         [ div [ class "col-xs-12" ]
-            [ h2 [] [ text "Guesses" ]
+            [ h2 [ class "hidden-sm-down" ] [ text "Guesses" ]
+            , h4 [] [ text "Click a key to guess a letter" ]
             , keyboard address model
             ]
         ]
