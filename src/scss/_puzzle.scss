@@ -2,25 +2,58 @@
 // in by the user.
 
 .puzzle {
+  font-size: 1.5rem;
+}
+
+@include media-breakpoint-up(sm) {
+  .puzzle {
+    font-size: 2rem;
+  }
 }
 
 .puzzle-word {
   display: inline-block;
-  margin: 0.2em 0.75em;
+  margin-right: 0.4em;
+}
+
+@include media-breakpoint-up(sm) {
+  .puzzle-word {
+    margin-right: 0.75em;
+    margin-bottom: 0.4em;
+  }
 }
 
 .puzzle-place {
   display: inline-block;
-  width: 2.5rem;
-  font-size: 2rem;
+  width: 1.4em;
+  font-size: 75%;
+}
+
+@include media-breakpoint-up(md) {
+  .puzzle-place {
+    width: 3rem;
+    font-size: 100%;
+  }
 }
 
 .puzzle-place-letter {
-  margin-right: 0.3rem;
   border: 1px solid #ccc;
   text-align: center;
+  margin-right: 0.1em;
+}
+
+@include media-breakpoint-up(md) {
+  .puzzle-place-letter {
+    margin-right: 0.3em;
+  }
 }
 
 .puzzle-place-punctuation {
-  width: 1rem;
+  width: 0.5em;
+}
+
+@include media-breakpoint-up(md) {
+  .puzzle-place-punctuation {
+    margin-left: -0.3em;
+  }
 }

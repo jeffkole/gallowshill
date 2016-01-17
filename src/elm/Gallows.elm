@@ -266,7 +266,7 @@ view address model =
     , div [ class "row" ]
         [ div [ class "col-xs-12" ]
             [ h2 [] [ text "Puzzle" ]
-            , div [] (puzzle model)
+            , puzzle model
             ]
         ]
     , div [ class "row" ]
@@ -344,16 +344,20 @@ controls address model =
             ]
         ]
 
-puzzle : Model -> List Html
+puzzle : Model -> Html
 puzzle model =
   if not model.ready then
-      []
+      div [] []
 
   else
       let words = PuzzleWords.toWords model.game.puzzle
+          children =
+            (List.map aWord words)
+            ++ [ (solvedIndicator model.game.puzzle) ]
       in
-        (List.map aWord words)
-        ++ [ (solvedIndicator model.game.puzzle) ]
+         div
+           [ class "puzzle" ]
+           children
 
 aWord : List PuzzlePlace -> Html
 aWord places =

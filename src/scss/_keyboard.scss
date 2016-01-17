@@ -2,17 +2,31 @@
 
 .keyboard {
   text-align: center;
+  font-size: 1.5rem;
+}
+
+@include media-breakpoint-up(sm) {
+  .keyboard {
+    font-size: 2rem;
+  }
 }
 
 .keyboard-key {
   display: inline-block;
-  width: 3rem;
-  font-size: 2rem;
-  margin: 0.1rem;
-  padding: 0.2rem;
+  width: 1.4em;
+  font-size: 75%;
+  margin: 0.1em;
+  padding: 0.2em;
   border: 1px solid #ccc;
   text-align: center;
   cursor: pointer;
+}
+
+@include media-breakpoint-up(md) {
+  .keyboard-key {
+    width: 3rem;
+    font-size: 100%;
+  }
 }
 
 .keyboard-key-correct {
