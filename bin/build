@@ -11,8 +11,11 @@ cp src/CNAME _site/
 
 cp data/*.json _site/data/
 
-# TODO: Actually minimize the css
-cp node_modules/normalize.css/normalize.css _site/css/normalize.min.css
+node-sass \
+  --include-path src/scss/:node_modules/bootstrap/scss/ \
+  src/scss/app.scss \
+  --output _site/css/
+
 cp node_modules/html5shiv/dist/html5shiv.min.js _site/js/vendor/
 
 exit 0
