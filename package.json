@@ -3,15 +3,25 @@
   "version": "1.0.0",
   "description": "A game of hangman",
   "scripts": {
-    "start": "./bin/build && superstatic",
-    "deploy": "./bin/build && surge --project _site",
-    "dev": "superstatic & watch './bin/build' src"
+    "build": "rm -rf _site && npm run build:css && npm run build:elm && npm run build:data && npm run build:js:vendor && npm run build:static",
+    "build:css": "rm -rf _site/css && mkdir -p _site/css && node-sass --include-path src/scss/:node_modules/bootstrap/scss/ src/scss/app.scss --output _site/css/",
+    "build:elm": "rm -rf _site/js && mkdir -p _site/js && elm make src/elm/Gallows.elm --warn --output _site/js/app.js",
+    "build:data": "rm -rf _site/data && mkdir -p _site/data && cp data/*.json _site/data/",
+    "build:js:vendor": "rm -rf _site/js/vendor && mkdir -p _site/js/vendor && cp node_modules/html5shiv/dist/html5shiv.min.js _site/js/vendor/",
+    "build:static": "rm -rf _site/{index.html,CNAME} && mkdir -p _site && cp src/{index.html,CNAME} _site/",
+
+    "start": "npm run -s build && superstatic",
+
+    "deploy": "npm run -s build && surge --project _site",
+
+    "dev": "npm run -s build && parallelshell \"watch 'npm run -s build:css' src/scss/\" \"watch 'npm run -s build:elm' src/elm/\" \"superstatic\""
   },
   "devDependencies": {
     "bootstrap": "^4.0.0-alpha.2",
     "elm": "^0.16.0",
     "html5shiv": "^3.7.3",
     "node-sass": "^3.4.2",
+    "parallelshell": "^2.0.0",
     "superstatic": "^4.0.1",
     "surge": "^0.17.4",
     "watch": "^0.17.1"
