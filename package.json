@@ -8,13 +8,12 @@
     "dev": "superstatic & watch './bin/build' src"
   },
   "devDependencies": {
+    "bootstrap": "^4.0.0-alpha.2",
     "elm": "^0.16.0",
+    "html5shiv": "^3.7.3",
+    "node-sass": "^3.4.2",
     "superstatic": "^4.0.1",
     "surge": "^0.17.4",
     "watch": "^0.17.1"
-  },
-  "dependencies": {
-    "html5shiv": "^3.7.3",
-    "normalize.css": "^3.0.3"
   }
 }

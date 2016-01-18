@@ -251,24 +251,31 @@ findLeastFrequentLetter letters =
 view : Address Action -> Model -> Html
 view address model =
   div
-    [ style
-      [ ( "text-align", "center" ) ]
-    ]
-    [ h1 [] [ text "The Blood Runs Cold On Gallows Hill" ]
-    , div
-        []
-        [ (controls address model) ]
-    , div
-        []
-        [ h2 [] [ text "Puzzle" ]
-        , div
-            []
-            (puzzle model)
+    [ class "container text-xs-center" ]
+    [ div [ class "row" ]
+        [ div [ class "col-xs-12" ]
+            [ h1 []
+                [ text "The Blood Runs Cold On Gallows Hill" ]
+            ]
         ]
-    , div
-        []
-        [ h2 [] [ text "Guesses" ]
-        , keyboard address model
+    , div [ class "row" ]
+        [ div [ class "col-xs-12" ]
+            [ controls address model
+            ]
+        ]
+    , div [ class "row m-b-1" ]
+        [ div [ class "col-xs-12" ]
+            [ h2 [ class "hidden-sm-down" ] [ text "Puzzle" ]
+            , h4 [] [ text "Solve the puzzle below" ]
+            , puzzle model
+            ]
+        ]
+    , div [ class "row" ]
+        [ div [ class "col-xs-12" ]
+            [ h2 [ class "hidden-sm-down" ] [ text "Guesses" ]
+            , h4 [] [ text "Click a key to guess a letter" ]
+            , keyboard address model
+            ]
         ]
     ]
 
@@ -280,14 +287,11 @@ keyboard address model =
         , "zxcvbnm"
         ]
 
-  in div [] (List.map (keyboardRow address model) keys)
+  in div [ class "keyboard" ] (List.map (keyboardRow address model) keys)
 
 keyboardRow : Address Action -> Model -> String -> Html
 keyboardRow address model keys =
-  let row =
-        List.map (keyboardKey address model) (String.toList keys)
-
-  in div [ style [ ( "text-align", "center" ) ] ] row
+  div [] (List.map (keyboardKey address model) (String.toList keys))
 
 keyboardKey : Address Action -> Model -> Char -> Html
 keyboardKey address model key =
@@ -297,28 +301,18 @@ keyboardKey address model key =
         List.filter (\{ letter } -> keyString == letter) model.game.guesses
         |> List.head
 
-      keyStyle =
+      keyClass =
         case guess of
-          Nothing -> style keyboardStyles
+          Nothing -> class "keyboard-key"
           Just { correct } ->
             if correct then
-              style <|
-                keyboardStyles
-                ++ [ ( "background-color", "darkcyan" )
-                   , ( "font-weight", "bold" )
-                   , ( "color", "white" )
-                   ]
+               class "keyboard-key keyboard-key-correct"
             else
-              style <|
-                keyboardStyles
-                ++ [ ( "background-color", "lightcoral" )
-                   , ( "font-weight", "bold" )
-                   , ( "color", "white" )
-                   ]
+               class "keyboard-key keyboard-key-incorrect"
 
   in
       div
-        [ keyStyle
+        [ keyClass
         , onClick address (TakeAGuess keyString)
         ]
         [ text keyString ]
@@ -329,76 +323,61 @@ controls address model =
       puzzleSolved = isSolved model.game.puzzle
   in
       ul
-        [ style
-          [ ( "list-style-type", "none" )
-          , ( "padding", "0" )
-          ]
-        ]
+        [ class "list-inline" ]
         [ li
-            []
+            [ class "list-inline-item" ]
             [ button
               [ onClick address NewGame
               , disabled gameNotReady
+              , class "btn btn-primary-outline"
+              , type' "button"
               ]
               [ text "New Game" ]
-            , button
+            ]
+        , li
+            [ class "list-inline-item" ]
+            [ button
               [ onClick address RevealALetter
               , disabled (gameNotReady || puzzleSolved)
+              , class "btn btn-secondary-outline"
+              , type' "button"
               ]
               [ text "Reveal A Letter" ]
             ]
         ]
 
-puzzle : Model -> List Html
+puzzle : Model -> Html
 puzzle model =
   if not model.ready then
-      []
+      div [] []
 
   else
       let words = PuzzleWords.toWords model.game.puzzle
+          children =
+            (List.map aWord words)
+            ++ [ (solvedIndicator model.game.puzzle) ]
       in
-        (List.map aWord words)
-        ++ [ (solvedIndicator model.game.puzzle) ]
+         div
+           [ class "puzzle" ]
+           children
 
 aWord : List PuzzlePlace -> Html
 aWord places =
   let letters = List.map aLetter places
   in div
-       [ style
-         [ ( "display", "inline-block" )
-         , ( "margin", "0.2em 0.75em" )
-         ] ]
+       [ class "puzzle-word" ]
        letters
 
 aLetter : PuzzlePlace -> Html
 aLetter { letter, show } =
   if show then
-      div [ letterStyle ] [ text letter ]
+      div [ class "puzzle-place puzzle-place-letter" ] [ text letter ]
 
   else if isPunctuation letter then
-      div [ punctuationStyle ] [ text letter ]
+      div [ class "puzzle-place puzzle-place-punctuation" ] [ text letter ]
 
   else
-      div [ letterStyle ] [ text "_" ]
-
-letterStyle : Attribute
-letterStyle =
-  style
-    [ ( "display", "inline-block" )
-    , ( "width", "1em" )
-    , ( "font-size", "2em" )
-    , ( "margin-right", "0.2em" )
-    , ( "border", "1px solid #ccc" )
-    , ( "text-align", "center" )
-    ]
-
-punctuationStyle : Attribute
-punctuationStyle =
-  style
-    [ ( "display", "inline-block" )
-    , ( "width", "1em" )
-    , ( "font-size", "2em" )
-    ]
+      div [ class "puzzle-place puzzle-place-letter" ] [ text "_" ]
 
 isPunctuation : String -> Bool
 isPunctuation letter =
@@ -407,18 +386,6 @@ isPunctuation letter =
       punctuation = " `~!@#$%^&*()-_=+[]{}|;':\",.<>/?"
 
   in String.contains first punctuation
-
-keyboardStyles : List (String, String)
-keyboardStyles =
-    [ ( "display", "inline-block" )
-    , ( "width", "1em" )
-    , ( "font-size", "2em" )
-    , ( "margin", "0.1em" )
-    , ( "padding", "0.2em" )
-    , ( "border", "1px solid #ccc" )
-    , ( "text-align", "center" )
-    , ( "cursor", "pointer" )
-    ]
 
 solvedIndicator : Puzzle -> Html
 solvedIndicator puzzle =

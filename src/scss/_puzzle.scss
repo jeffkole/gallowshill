@@ -1,0 +1,63 @@
+// The styles for the puzzle component which displays the letters to be filled
+// in by the user.
+
+.puzzle {
+  font-size: 2.5rem;
+}
+
+@include media-breakpoint-up(sm) {
+  .puzzle {
+    font-size: 2rem;
+  }
+}
+
+.puzzle-word {
+  display: inline-block;
+  margin-right: 0.4em;
+}
+
+@include media-breakpoint-up(sm) {
+  .puzzle-word {
+    margin-right: 0.75em;
+  }
+}
+
+@include media-breakpoint-up(md) {
+  .puzzle-word {
+    margin-bottom: 0.4em;
+  }
+}
+
+.puzzle-place {
+  display: inline-block;
+  width: 1.4em;
+  font-size: 0.75em;
+}
+
+@include media-breakpoint-up(md) {
+  .puzzle-place {
+    font-size: 1em;
+  }
+}
+
+.puzzle-place-letter {
+  border: 1px solid #ccc;
+  text-align: center;
+  margin-right: 0.1em;
+}
+
+@include media-breakpoint-up(md) {
+  .puzzle-place-letter {
+    margin-right: 0.3em;
+  }
+}
+
+.puzzle-place-punctuation {
+  width: 0.5em;
+}
+
+@include media-breakpoint-up(md) {
+  .puzzle-place-punctuation {
+    margin-left: -0.3em;
+  }
+}

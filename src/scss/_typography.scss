@@ -1,0 +1,55 @@
+$font-scale-factor-xs: 0.5;
+$font-scale-factor-sm: 0.75;
+$font-scale-factor-md: 1.0;
+
+html {
+  font-size: $font-size-root;
+}
+
+h1 {
+  font-size: $font-size-h1 * $font-scale-factor-xs;
+}
+
+h2 {
+  font-size: $font-size-h2 * $font-scale-factor-xs;
+}
+
+h4 {
+  font-size: $font-size-h4 * $font-scale-factor-xs;
+}
+
+@include media-breakpoint-up(sm) {
+  html {
+    font-size: $font-size-root + 2;
+  }
+
+  h1 {
+    font-size: $font-size-h1 * $font-scale-factor-sm;
+  }
+
+  h2 {
+    font-size: $font-size-h2 * $font-scale-factor-sm;
+  }
+
+  h4 {
+    font-size: $font-size-h4 * $font-scale-factor-sm;
+  }
+}
+
+@include media-breakpoint-up(md) {
+  html {
+    font-size: $font-size-root + 4;
+  }
+
+  h1 {
+    font-size: $font-size-h1 * $font-scale-factor-md;
+  }
+
+  h2 {
+    font-size: $font-size-h2 * $font-scale-factor-md;
+  }
+
+  h4 {
+    font-size: $font-size-h4 * $font-scale-factor-md;
+  }
+}
