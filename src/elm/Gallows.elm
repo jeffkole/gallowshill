@@ -12,6 +12,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
 import Json.Decode as Json exposing ((:=))
+import KeyboardUI
 import PuzzleWords
 import Random exposing (Seed)
 import Signal exposing (Address)
@@ -281,41 +282,17 @@ view address model =
 
 keyboard : Address Action -> Model -> Html
 keyboard address model =
-  let keys =
-        [ "qwertyuiop"
-        , "asdfghjkl"
-        , "zxcvbnm"
-        ]
+  let context =
+        KeyboardUI.Context (Signal.forwardTo address TakeAGuess)
 
-  in div [ class "keyboard" ] (List.map (keyboardRow address model) keys)
-
-keyboardRow : Address Action -> Model -> String -> Html
-keyboardRow address model keys =
-  div [] (List.map (keyboardKey address model) (String.toList keys))
-
-keyboardKey : Address Action -> Model -> Char -> Html
-keyboardKey address model key =
-  let keyString = String.fromChar key
-
-      guess =
-        List.filter (\{ letter } -> keyString == letter) model.game.guesses
-        |> List.head
-
-      keyClass =
-        case guess of
-          Nothing -> class "keyboard-key"
-          Just { correct } ->
-            if correct then
-               class "keyboard-key keyboard-key-correct"
-            else
-               class "keyboard-key keyboard-key-incorrect"
+      -- Unfortunately, I have to construct a model exactly like what the
+      -- KeyboardUI wants instead of being able to pass in the whole game,
+      -- letting the extensible record syntax indicate the fields that are
+      -- needed.
+      keyboardModel = model.game.guesses
 
   in
-      div
-        [ keyClass
-        , onClick address (TakeAGuess keyString)
-        ]
-        [ text keyString ]
+      KeyboardUI.view context keyboardModel
 
 controls : Address Action -> Model -> Html
 controls address model =
