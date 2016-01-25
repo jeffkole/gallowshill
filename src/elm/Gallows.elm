@@ -4,20 +4,23 @@ module Gallows where
 
 -}
 
+import ControlsUI
 import CurrentTime
 import Dict
 import Effects exposing (Effects, Never)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (..)
 import Http
 import Json.Decode as Json exposing ((:=))
-import PuzzleWords
+import KeyboardUI
+import Models exposing (Game, Guess, Puzzle, PuzzlePlace)
+import PuzzleUI
 import Random exposing (Seed)
 import Signal exposing (Address)
 import StartApp
 import String
 import Task exposing (Task)
+import Utilities exposing (isPunctuation, isSolved)
 
 ---- MODEL ----
 
@@ -26,24 +29,6 @@ type alias Model =
   , game : Game
   , phrases : List String
   , seed : Seed
-  }
-
-type alias Guess =
-  { letter : String
-  , correct : Bool
-  }
-
-type alias PuzzlePlace =
-  { letter : String
-  , show : Bool
-  }
-
-type alias Puzzle =
-  List PuzzlePlace
-
-type alias Game =
-  { guesses : List Guess
-  , puzzle : Puzzle
   }
 
 init : ( Model, Effects Action )
@@ -208,11 +193,6 @@ updatePuzzle guess puzzle =
     )
     puzzle
 
-isSolved : Puzzle -> Bool
-isSolved puzzle =
-  List.all
-    (\{ letter, show } -> show || isPunctuation letter)
-    puzzle
 
 findIncorrectLetters : Puzzle -> List String
 findIncorrectLetters puzzle =
@@ -279,127 +259,38 @@ view address model =
         ]
     ]
 
-keyboard : Address Action -> Model -> Html
-keyboard address model =
-  let keys =
-        [ "qwertyuiop"
-        , "asdfghjkl"
-        , "zxcvbnm"
-        ]
-
-  in div [ class "keyboard" ] (List.map (keyboardRow address model) keys)
-
-keyboardRow : Address Action -> Model -> String -> Html
-keyboardRow address model keys =
-  div [] (List.map (keyboardKey address model) (String.toList keys))
-
-keyboardKey : Address Action -> Model -> Char -> Html
-keyboardKey address model key =
-  let keyString = String.fromChar key
-
-      guess =
-        List.filter (\{ letter } -> keyString == letter) model.game.guesses
-        |> List.head
-
-      keyClass =
-        case guess of
-          Nothing -> class "keyboard-key"
-          Just { correct } ->
-            if correct then
-               class "keyboard-key keyboard-key-correct"
-            else
-               class "keyboard-key keyboard-key-incorrect"
-
-  in
-      div
-        [ keyClass
-        , onClick address (TakeAGuess keyString)
-        ]
-        [ text keyString ]
-
 controls : Address Action -> Model -> Html
 controls address model =
-  let gameNotReady = not model.ready
-      puzzleSolved = isSolved model.game.puzzle
+  let context =
+        ControlsUI.Context
+          (Signal.forwardTo address (\_ -> NewGame))
+          (Signal.forwardTo address (\_ -> RevealALetter))
+      controlsModel =
+        { ready = model.ready
+        , game = model.game
+        }
   in
-      ul
-        [ class "list-inline" ]
-        [ li
-            [ class "list-inline-item" ]
-            [ button
-              [ onClick address NewGame
-              , disabled gameNotReady
-              , class "btn btn-primary-outline"
-              , type' "button"
-              ]
-              [ text "New Game" ]
-            ]
-        , li
-            [ class "list-inline-item" ]
-            [ button
-              [ onClick address RevealALetter
-              , disabled (gameNotReady || puzzleSolved)
-              , class "btn btn-secondary-outline"
-              , type' "button"
-              ]
-              [ text "Reveal A Letter" ]
-            ]
-        ]
+      ControlsUI.view context controlsModel
+
+keyboard : Address Action -> Model -> Html
+keyboard address model =
+  let context =
+        KeyboardUI.Context (Signal.forwardTo address TakeAGuess)
+
+      -- Unfortunately, I have to construct a model exactly like what the
+      -- KeyboardUI wants instead of being able to pass in the whole game,
+      -- letting the extensible record syntax indicate the fields that are
+      -- needed.
+      keyboardModel = model.game.guesses
+
+  in
+      KeyboardUI.view context keyboardModel
+
 
 puzzle : Model -> Html
 puzzle model =
-  if not model.ready then
-      div [] []
+  PuzzleUI.view { ready = model.ready, game = model.game }
 
-  else
-      let words = PuzzleWords.toWords model.game.puzzle
-          children =
-            (List.map aWord words)
-            ++ [ (solvedIndicator model.game.puzzle) ]
-      in
-         div
-           [ class "puzzle" ]
-           children
-
-aWord : List PuzzlePlace -> Html
-aWord places =
-  let letters = List.map aLetter places
-  in div
-       [ class "puzzle-word" ]
-       letters
-
-aLetter : PuzzlePlace -> Html
-aLetter { letter, show } =
-  if show then
-      div [ class "puzzle-place puzzle-place-letter" ] [ text letter ]
-
-  else if isPunctuation letter then
-      div [ class "puzzle-place puzzle-place-punctuation" ] [ text letter ]
-
-  else
-      div [ class "puzzle-place puzzle-place-letter" ] [ text "_" ]
-
-isPunctuation : String -> Bool
-isPunctuation letter =
-  let first = String.left 1 letter
-
-      punctuation = " `~!@#$%^&*()-_=+[]{}|;':\",.<>/?"
-
-  in String.contains first punctuation
-
-solvedIndicator : Puzzle -> Html
-solvedIndicator puzzle =
-  let solved =
-        isSolved puzzle
-
-      indicator =
-        if solved then
-            span [] [ text "!" ]
-
-        else
-            span [] []
-
-  in indicator
 
 ---- INPUTS ----
 
