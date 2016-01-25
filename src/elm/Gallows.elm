@@ -4,6 +4,7 @@ module Gallows where
 
 -}
 
+import Char exposing (KeyCode)
 import ControlsUI
 import CurrentTime
 import Dict
@@ -12,6 +13,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Http
 import Json.Decode as Json exposing ((:=))
+import Keyboard
 import KeyboardUI
 import Models exposing (Game, Guess, Puzzle, PuzzlePlace)
 import PuzzleUI
@@ -84,6 +86,7 @@ type Action
   | NewGame
   | RevealALetter
   | SetPhrases (Maybe (List String))
+  | NoOp
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
@@ -169,6 +172,9 @@ update action model =
                 }
 
           in ( updatedModel, Effects.none )
+
+    NoOp ->
+      ( model, Effects.none )
 
 checkGuess : String -> Puzzle -> Guess
 checkGuess guess puzzle =
@@ -293,6 +299,22 @@ puzzle model =
 
 
 ---- INPUTS ----
+inputs : List (Signal Action)
+inputs =
+  let
+    keyAction keyCode =
+      let
+        key = String.toLower (String.fromChar (Char.fromCode keyCode))
+        letters = "abcdefghijklmnopqrstuvwxyz"
+        valid = String.contains key letters
+      in
+        if valid then
+          TakeAGuess key
+        else
+          NoOp
+    keyPresses = Signal.map keyAction Keyboard.presses
+  in
+    [ keyPresses ]
 
 app : StartApp.App Model
 app =
@@ -300,7 +322,7 @@ app =
     { init = init
     , view = view
     , update = update
-    , inputs = []
+    , inputs = inputs
     }
 
 main : Signal Html
