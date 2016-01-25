@@ -4,21 +4,23 @@ module Gallows where
 
 -}
 
+import ControlsUI
 import CurrentTime
 import Dict
 import Effects exposing (Effects, Never)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (..)
 import Http
 import Json.Decode as Json exposing ((:=))
 import KeyboardUI
+import Models exposing (Game, Guess, Puzzle, PuzzlePlace)
 import PuzzleWords
 import Random exposing (Seed)
 import Signal exposing (Address)
 import StartApp
 import String
 import Task exposing (Task)
+import Utilities exposing (isPunctuation, isSolved)
 
 ---- MODEL ----
 
@@ -27,24 +29,6 @@ type alias Model =
   , game : Game
   , phrases : List String
   , seed : Seed
-  }
-
-type alias Guess =
-  { letter : String
-  , correct : Bool
-  }
-
-type alias PuzzlePlace =
-  { letter : String
-  , show : Bool
-  }
-
-type alias Puzzle =
-  List PuzzlePlace
-
-type alias Game =
-  { guesses : List Guess
-  , puzzle : Puzzle
   }
 
 init : ( Model, Effects Action )
@@ -209,11 +193,6 @@ updatePuzzle guess puzzle =
     )
     puzzle
 
-isSolved : Puzzle -> Bool
-isSolved puzzle =
-  List.all
-    (\{ letter, show } -> show || isPunctuation letter)
-    puzzle
 
 findIncorrectLetters : Puzzle -> List String
 findIncorrectLetters puzzle =
@@ -280,6 +259,19 @@ view address model =
         ]
     ]
 
+controls : Address Action -> Model -> Html
+controls address model =
+  let context =
+        ControlsUI.Context
+          (Signal.forwardTo address (\_ -> NewGame))
+          (Signal.forwardTo address (\_ -> RevealALetter))
+      controlsModel =
+        { ready = model.ready
+        , game = model.game
+        }
+  in
+      ControlsUI.view context controlsModel
+
 keyboard : Address Action -> Model -> Html
 keyboard address model =
   let context =
@@ -294,34 +286,6 @@ keyboard address model =
   in
       KeyboardUI.view context keyboardModel
 
-controls : Address Action -> Model -> Html
-controls address model =
-  let gameNotReady = not model.ready
-      puzzleSolved = isSolved model.game.puzzle
-  in
-      ul
-        [ class "list-inline" ]
-        [ li
-            [ class "list-inline-item" ]
-            [ button
-              [ onClick address NewGame
-              , disabled gameNotReady
-              , class "btn btn-primary-outline"
-              , type' "button"
-              ]
-              [ text "New Game" ]
-            ]
-        , li
-            [ class "list-inline-item" ]
-            [ button
-              [ onClick address RevealALetter
-              , disabled (gameNotReady || puzzleSolved)
-              , class "btn btn-secondary-outline"
-              , type' "button"
-              ]
-              [ text "Reveal A Letter" ]
-            ]
-        ]
 
 puzzle : Model -> Html
 puzzle model =
@@ -355,14 +319,6 @@ aLetter { letter, show } =
 
   else
       div [ class "puzzle-place puzzle-place-letter" ] [ text "_" ]
-
-isPunctuation : String -> Bool
-isPunctuation letter =
-  let first = String.left 1 letter
-
-      punctuation = " `~!@#$%^&*()-_=+[]{}|;':\",.<>/?"
-
-  in String.contains first punctuation
 
 solvedIndicator : Puzzle -> Html
 solvedIndicator puzzle =
