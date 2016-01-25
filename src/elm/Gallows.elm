@@ -20,7 +20,7 @@ import Signal exposing (Address)
 import StartApp
 import String
 import Task exposing (Task)
-import Utilities exposing (isPunctuation, isSolved)
+import Utilities exposing (isLetter, isPunctuation, isSolved)
 
 ---- MODEL ----
 
@@ -84,34 +84,39 @@ type Action
   | NewGame
   | RevealALetter
   | SetPhrases (Maybe (List String))
+  | NoOp
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
     TakeAGuess guess ->
-      let game = model.game
+      if not (isLetter guess) then
+        ( model, Effects.none )
 
-          checkedGuess = checkGuess guess game.puzzle
+      else
+        let game = model.game
 
-          updatedPuzzle =
-            if checkedGuess.correct then
-               updatePuzzle guess game.puzzle
+            checkedGuess = checkGuess guess game.puzzle
 
-            else
-               game.puzzle
+            updatedPuzzle =
+              if checkedGuess.correct then
+                updatePuzzle guess game.puzzle
 
-          updatedGame =
-            { game
-                | guesses = checkedGuess :: game.guesses
-                , puzzle = updatedPuzzle
-            }
+              else
+                game.puzzle
 
-          updatedModel =
-            { model
-                | game = updatedGame
-            }
+            updatedGame =
+              { game
+                  | guesses = checkedGuess :: game.guesses
+                  , puzzle = updatedPuzzle
+              }
 
-      in ( updatedModel, Effects.none )
+            updatedModel =
+              { model
+                  | game = updatedGame
+              }
+
+        in ( updatedModel, Effects.none )
 
     NewGame ->
       if not model.ready then
@@ -169,6 +174,9 @@ update action model =
                 }
 
           in ( updatedModel, Effects.none )
+
+    NoOp ->
+      ( model, Effects.none )
 
 checkGuess : String -> Puzzle -> Guess
 checkGuess guess puzzle =
@@ -293,6 +301,11 @@ puzzle model =
 
 
 ---- INPUTS ----
+inputs : List (Signal Action)
+inputs =
+  [ Signal.map TakeAGuess (KeyboardUI.inputs)
+  ]
+
 
 app : StartApp.App Model
 app =
@@ -300,7 +313,7 @@ app =
     { init = init
     , view = view
     , update = update
-    , inputs = []
+    , inputs = inputs
     }
 
 main : Signal Html

@@ -1,11 +1,14 @@
 module KeyboardUI
   ( Context
+  , inputs
   , view
   ) where
 
+import Char exposing (fromCode)
 import Html exposing (div, Html, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
+import Keyboard
 import Models exposing (Guess)
 import Signal exposing (Address)
 import String
@@ -44,7 +47,8 @@ view context model =
       , "zxcvbnm"
       ]
   in
-    div [ class "keyboard" ] (List.map (keyboardRow context model) rows)
+    div
+      [ class "keyboard" ] (List.map (keyboardRow context model) rows)
 
 keyboardRow : Context -> Model -> String -> Html
 keyboardRow context model keys =
@@ -73,3 +77,9 @@ keyboardKey context model key =
       , onClick context.guess keyString
       ]
       [ text keyString ]
+
+inputs : Signal String
+inputs =
+  Signal.map
+    (String.toLower << String.fromChar << Char.fromCode)
+    Keyboard.presses

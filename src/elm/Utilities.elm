@@ -1,10 +1,20 @@
 module Utilities
-  ( isPunctuation
+  ( isLetter
+  , isPunctuation
   , isSolved
   ) where
 
 import Models exposing (Puzzle)
 import String
+
+isLetter : String -> Bool
+isLetter letter =
+  let
+    first = String.left 1 letter
+
+    letters = "abcdefghijklmnopqrstuvwxyz"
+
+  in String.contains first letters
 
 isPunctuation : String -> Bool
 isPunctuation letter =
