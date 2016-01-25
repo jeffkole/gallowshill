@@ -6,6 +6,7 @@ module KeyboardUI
 import Html exposing (div, Html, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
+import Models exposing (Guess)
 import Signal exposing (Address)
 import String
 
@@ -26,7 +27,7 @@ type alias Model model game =
   }
 -}
 
-type alias Model = List { letter : String, correct : Bool }
+type alias Model = List Guess
 
 -- VIEW
 
