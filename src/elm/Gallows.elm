@@ -4,7 +4,6 @@ module Gallows where
 
 -}
 
-import Char exposing (KeyCode)
 import ControlsUI
 import CurrentTime
 import Dict
@@ -13,7 +12,6 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Http
 import Json.Decode as Json exposing ((:=))
-import Keyboard
 import KeyboardUI
 import Models exposing (Game, Guess, Puzzle, PuzzlePlace)
 import PuzzleUI
@@ -22,7 +20,7 @@ import Signal exposing (Address)
 import StartApp
 import String
 import Task exposing (Task)
-import Utilities exposing (isPunctuation, isSolved)
+import Utilities exposing (isLetter, isPunctuation, isSolved)
 
 ---- MODEL ----
 
@@ -92,29 +90,33 @@ update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
     TakeAGuess guess ->
-      let game = model.game
+      if not (isLetter guess) then
+        ( model, Effects.none )
 
-          checkedGuess = checkGuess guess game.puzzle
+      else
+        let game = model.game
 
-          updatedPuzzle =
-            if checkedGuess.correct then
-               updatePuzzle guess game.puzzle
+            checkedGuess = checkGuess guess game.puzzle
 
-            else
-               game.puzzle
+            updatedPuzzle =
+              if checkedGuess.correct then
+                updatePuzzle guess game.puzzle
 
-          updatedGame =
-            { game
-                | guesses = checkedGuess :: game.guesses
-                , puzzle = updatedPuzzle
-            }
+              else
+                game.puzzle
 
-          updatedModel =
-            { model
-                | game = updatedGame
-            }
+            updatedGame =
+              { game
+                  | guesses = checkedGuess :: game.guesses
+                  , puzzle = updatedPuzzle
+              }
 
-      in ( updatedModel, Effects.none )
+            updatedModel =
+              { model
+                  | game = updatedGame
+              }
+
+        in ( updatedModel, Effects.none )
 
     NewGame ->
       if not model.ready then
@@ -301,20 +303,9 @@ puzzle model =
 ---- INPUTS ----
 inputs : List (Signal Action)
 inputs =
-  let
-    keyAction keyCode =
-      let
-        key = String.toLower (String.fromChar (Char.fromCode keyCode))
-        letters = "abcdefghijklmnopqrstuvwxyz"
-        valid = String.contains key letters
-      in
-        if valid then
-          TakeAGuess key
-        else
-          NoOp
-    keyPresses = Signal.map keyAction Keyboard.presses
-  in
-    [ keyPresses ]
+  [ Signal.map TakeAGuess (KeyboardUI.inputs)
+  ]
+
 
 app : StartApp.App Model
 app =
