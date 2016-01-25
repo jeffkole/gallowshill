@@ -16,6 +16,7 @@ import KeyboardUI
 import Models exposing (Game, Guess, Puzzle, PuzzlePlace)
 import PuzzleUI
 import Random exposing (Seed)
+import ScoreBoardUI
 import Signal exposing (Address)
 import StartApp
 import String
@@ -90,12 +91,22 @@ update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
     TakeAGuess guess ->
-      if not (isLetter guess) then
-        ( model, Effects.none )
+      let
+        game = model.game
 
-      else
-        let game = model.game
+        guesses = game.guesses
 
+        alreadyGuessed =
+          not (List.isEmpty (List.filter (\{ letter } -> letter == guess) guesses))
+      in
+        if not (isLetter guess) then
+          ( model, Effects.none )
+
+        else if alreadyGuessed then
+          ( model, Effects.none )
+
+        else
+          let
             checkedGuess = checkGuess guess game.puzzle
 
             updatedPuzzle =
@@ -116,7 +127,7 @@ update action model =
                   | game = updatedGame
               }
 
-        in ( updatedModel, Effects.none )
+          in ( updatedModel, Effects.none )
 
     NewGame ->
       if not model.ready then
@@ -247,8 +258,11 @@ view address model =
             ]
         ]
     , div [ class "row" ]
-        [ div [ class "col-xs-12" ]
+        [ div [ class "col-xs-6" ]
             [ controls address model
+            ]
+        , div [ class "col-xs-6" ]
+            [ scoreboard address model
             ]
         ]
     , div [ class "row m-b-1" ]
@@ -279,6 +293,10 @@ controls address model =
         }
   in
       ControlsUI.view context controlsModel
+
+scoreboard : Address Action -> Model -> Html
+scoreboard address model =
+  ScoreBoardUI.view model.game
 
 keyboard : Address Action -> Model -> Html
 keyboard address model =
